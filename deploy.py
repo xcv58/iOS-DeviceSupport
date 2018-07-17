@@ -1,21 +1,35 @@
 #!/usr/bin/env python
-from os import listdir, path
+import argparse
 import zipfile
+from os import listdir, path
 
-XCODE = '/Applications/Xcode.app'
-TARGET= '{}/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/'.format(XCODE)
 SRC = path.join(path.dirname(path.abspath(__file__)), 'DeviceSupport')
+DEVICE_SUPPORT_PATH='Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport'
 
-def unzip_file(name):
+def unzip_file(name, target):
   f = path.join(SRC, name + '.zip')
-  print 'Unzip file', f, 'to', TARGET
   zip_ref = zipfile.ZipFile(f, 'r')
-  zip_ref.extractall(TARGET)
+  zip_ref.extractall(target)
   zip_ref.close()
 
+def process(xcode):
+  target = path.join(xcode, DEVICE_SUPPORT_PATH)
+  exist = listdir(target)
+  all_files = [i.replace('.zip', '') for i in listdir(SRC) if i.endswith('.zip')]
+  new_files = list(set(all_files) - set(exist))
+  for i in new_files:
+    print 'Unzip file "{}.zip" to {}'.format(i, target)
+    unzip_file(i, target)
+  print '\nUpdate successfully for {}'.format(xcode)
 
-exist = listdir(TARGET)
-all_files = [i.replace('.zip', '') for i in listdir(SRC) if i.endswith('.zip')]
-new_files = list(set(all_files) - set(exist))
-for i in new_files:
-  unzip_file(i)
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '-t',
+    type=str,
+    dest='target',
+    default='/Applications/Xcode.app',
+    help='The path for Xcode'
+  )
+  args = parser.parse_args()
+  process(args.target)
